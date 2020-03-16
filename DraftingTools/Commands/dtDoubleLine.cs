@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing.Text;
+using DraftingTools.Getters;
 using Rhino;
 using Rhino.Commands;
 using Rhino.Display;
@@ -36,34 +37,7 @@ namespace DraftingTools.Commands
             var gdl = new GetDoubleLine(Width);
             gdl.SetCommandPrompt("Pick points for double line");
 
-            int index = 0;
-            while (true)
-            {
-                var rc = gdl.Get();
-                if (gdl.CommandResult() != Result.Success)
-                {
-                    return gdl.CommandResult();
-                }
-
-                if (rc == GetResult.Point)
-                {
-                    switch (index)
-                    {
-                        case 0:
-                            gdl.From = gdl.Point();
-                            break;
-                        case 1:
-                            gdl.To = gdl.Point();
-                            break;
-                        default:
-                            RhinoApp.WriteLine($"DoubleLine ERROR: Got 3 points for line!");
-                            break;
-                    }
-                    index += 1;
-                }
-
-                if (index >= 2) { break; }
-            }
+            if (!gdl.GetLine()) return Result.Failure;
 
             gdl.Bake(doc);
 
@@ -76,10 +50,8 @@ namespace DraftingTools.Commands
 
     }
 
-    internal class GetDoubleLine : GetPoint
+    internal class GetDoubleLine : GetLineBase
     {
-        public Point3d From { get; set; } = Point3d.Unset;
-        public Point3d To { get; set; } = Point3d.Unset;
         public OptionDouble LineWidth;
 
         private Line LineLeft;
@@ -108,20 +80,20 @@ namespace DraftingTools.Commands
 
         private Line CalculateAndSetLines(Point3d from, Point3d to, Plane plane)
         {
-            var line = new Line(from, to);
-            var xAxis = Vector3d.CrossProduct(line.Direction, plane.ZAxis);
+            Line = new Line(from, to);
+            var xAxis = Vector3d.CrossProduct(Line.Direction, plane.ZAxis);
             xAxis.Unitize();
 
-            LineLeft = line;
+            LineLeft = Line;
             LineLeft.Transform(Transform.Translation(xAxis * LineWidth.CurrentValue * -0.5));
 
-            LineRight = line;
+            LineRight = Line;
             LineRight.Transform(Transform.Translation(xAxis * LineWidth.CurrentValue * 0.5));
 
-            return line;
+            return Line;
         }
 
-        public void Bake(RhinoDoc doc)
+        public override void Bake(RhinoDoc doc)
         {
             doc.Objects.AddLine(LineLeft);
             doc.Objects.AddLine(LineRight);
