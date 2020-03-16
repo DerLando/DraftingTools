@@ -53,6 +53,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\dtDoubleLine.cs" />
     <Compile Include="DraftingToolsCommand.cs" />
     <Compile Include="DraftingToolsPlugIn.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
